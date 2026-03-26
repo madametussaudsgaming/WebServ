@@ -6,19 +6,24 @@
 #    By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/03/17 13:12:01 by alechin           #+#    #+#              #
-#    Updated: 2026/03/17 15:06:58 by alechin          ###   ########.fr        #
+#    Updated: 2026/03/26 12:40:14 by alechin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 CXX = c++
 FSAN = -fsanitize=address
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g3 $(FSAN)
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g3 -Iincludes $(FSAN)
 RM = rm -rf
 
 SOURCE = \
+	src/Error.cpp		\
+	src/Utilitys.cpp 	\
+	webserv.cpp			\
 
 HEADER = \
+	includes/Webserv.hpp		\
+	includes/Utilitys.hpp		\
 
 OBJECT = $(SOURCE:.cpp=.o)
 
@@ -31,9 +36,9 @@ CYAN := \033[1;36m
 all: $(NAME)
 
 $(NAME): $(OBJECT)
-	@printf "\n$(YELLOW)Compiling module...$(RESET)\n"
+	@printf "\n$(YELLOW)Compiling webserver...$(RESET)\n"
 	@$(CXX) $(CXXFLAGS) $(OBJECT) -o $(NAME)
-	@printf "\n$(GREEN)Successfully compiled module!$(RESET)\n"
+	@printf "\n$(GREEN)Successfully compiled our new webserver!$(RESET)\n"
 
 %.o: %.cpp $(HEADER)
 	@$(CXX) $(CXXFLAGS) -c $< -o $@

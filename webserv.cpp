@@ -6,12 +6,13 @@
 /*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/17 10:45:51 by alechin           #+#    #+#             */
-/*   Updated: 2026/03/26 15:36:34 by alechin          ###   ########.fr       */
+/*   Updated: 2026/03/31 21:29:24 by alechin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 #include "Utilitys.hpp"
+#include "RequestParser.hpp"
 
 int setNonBlocking(int fd) {
 	return fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -68,7 +69,8 @@ int	main(int argumentCounter, char **argumentVector) {
 			else if (fds[i].revents & POLLIN) {
 				char	buffer[BUFFER_SIZE];
 				int		bytes = recv(fds[i].fd, buffer, BUFFER_SIZE - 1, 0);
-				std::memset(buffer, 0, BUFFER_SIZE);
+				if (bytes > 0)
+					buffer[bytes] = '\0';
 
 				if (bytes <= 0) {
 					close(fds[i].fd);
@@ -76,8 +78,12 @@ int	main(int argumentCounter, char **argumentVector) {
 					i--;
 					std::cout << "Client Disconnected\n";
 				} else {
-					std::cout << "Request:\n" << buffer << std::endl;
-
+					std::cout << "Raw Request:\n" << buffer << std::endl;
+					RequestParser request;
+					parseRequest(buffer, request);
+					
+					std::cout << "Parsed Method: " << request.method << std::endl;
+					std::cout << "Parsed Path: " << request.path << std::endl;
                     const char *response =
                         "HTTP/1.1 200 OK\r\n"
                         "Content-Length: 12\r\n"

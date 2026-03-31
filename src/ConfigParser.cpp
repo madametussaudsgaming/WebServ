@@ -6,18 +6,10 @@
 /*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/19 15:41:25 by alechin           #+#    #+#             */
-/*   Updated: 2026/03/23 12:01:06 by alechin          ###   ########.fr       */
+/*   Updated: 2026/03/31 20:12:20 by alechin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-void GET() {
-	
-}
+#include "Request.hpp"
+#include "ConfigParser.hpp"
 
-void POST() {
-	
-}
-
-void DELETE() {
-	
-}

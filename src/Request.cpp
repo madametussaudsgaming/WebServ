@@ -1,19 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   RequestParser.cpp                                  :+:      :+:    :+:   */
+/*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/31 20:15:15 by alechin           #+#    #+#             */
-/*   Updated: 2026/03/31 21:29:16 by alechin          ###   ########.fr       */
+/*   Updated: 2026/04/01 15:05:21 by alechin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "RequestParser.hpp"
-#include "ConfigParser.hpp"
+#include "Request.hpp"
 
-void parseRequest(const std::string& raw, RequestParser& request) {
+void parseRequest(const std::string& raw, Request& request) {
 	size_t		headerEnd = raw.find("\r\n\r\n");
 	if (headerEnd == std::string::npos)
 		return;
@@ -31,7 +30,10 @@ void parseRequest(const std::string& raw, RequestParser& request) {
 		return;
 
 	std::istringstream iss(lines[0]);
-	iss >> request.method >> request.path >> request.version;
+	if (!(iss >> request.method >> request.path >> request.version)) {
+		Error2exit("Invalid Request Line\n", 1);
+		return;
+	}
 
 	for (size_t i = 1; i < lines.size(); i++) {
 		size_t colon = lines[i].find(":");
@@ -44,10 +46,9 @@ void parseRequest(const std::string& raw, RequestParser& request) {
 		while (!value.empty() && value[0] == ' ')
 			value.erase(0, 1);
 		request.headers[key] = value;
-
-		if (request.headers.count("Content-Length"))
-			request.contentLength = std::atoi(request.headers["Content-Length"].c_str());
-		if (bodyPart.size() >= request.contentLength)
-			request.body = bodyPart.substr(0, request.contentLength);
 	}
+	if (request.headers.count("Content-Length"))
+		request.contentLength = std::atoi(request.headers["Content-Length"].c_str());
+	if (bodyPart.size() >= request.contentLength)
+		request.body = bodyPart.substr(0, request.contentLength);
 }

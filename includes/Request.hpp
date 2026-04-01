@@ -1,23 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   RequestParser.hpp                                  :+:      :+:    :+:   */
+/*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/31 20:07:11 by alechin           #+#    #+#             */
-/*   Updated: 2026/03/31 21:29:09 by alechin          ###   ########.fr       */
+/*   Updated: 2026/04/01 15:04:17 by alechin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef REQUESTPARSER_HPP
-#define REQUESTPARSER_HPP
+#ifndef REQUEST_HPP
+#define REQUEST_HPP
 
 #include "Webserv.hpp"
 #include <sstream>
 #include <cstdlib>
 
-class RequestParser {
+class Request {
 	public:
 		std::string method;
 		std::string path;
@@ -27,12 +27,12 @@ class RequestParser {
 		std::string body;
 
 		size_t contentLength;
-		RequestParser(): contentLength(0) {};
-		RequestParser(const RequestParser& other);
-		RequestParser& operator=(const RequestParser& other);
-		~RequestParser();
+		Request(): contentLength(0) {};
+		Request(const Request& other);
+		Request& operator=(const Request& other);
+		~Request();
 };
 
-void parseRequest(const std::string& raw, RequestParser& request);
+void parseRequest(const std::string& raw, Request& request);
 
 #endif

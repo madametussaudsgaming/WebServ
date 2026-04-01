@@ -6,7 +6,7 @@
 /*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/17 10:58:08 by alechin           #+#    #+#             */
-/*   Updated: 2026/03/31 21:27:47 by alechin          ###   ########.fr       */
+/*   Updated: 2026/04/01 12:38:47 by alechin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <algorithm>
 
 class GET {
 	

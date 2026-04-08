@@ -6,7 +6,7 @@
 #    By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/03/17 13:12:01 by alechin           #+#    #+#              #
-#    Updated: 2026/03/26 12:40:14 by alechin          ###   ########.fr        #
+#    Updated: 2026/04/08 16:18:37 by alechin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -19,9 +19,11 @@ RM = rm -rf
 SOURCE = \
 	src/Error.cpp		\
 	src/Utilitys.cpp 	\
+	src/Request.cpp		\
 	webserv.cpp			\
 
 HEADER = \
+	includes/Request.hpp		\
 	includes/Webserv.hpp		\
 	includes/Utilitys.hpp		\
 

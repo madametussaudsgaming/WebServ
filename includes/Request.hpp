@@ -6,7 +6,7 @@
 /*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/31 20:07:11 by alechin           #+#    #+#             */
-/*   Updated: 2026/04/01 15:04:17 by alechin          ###   ########.fr       */
+/*   Updated: 2026/04/08 16:19:11 by alechin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,10 +27,10 @@ class Request {
 		std::string body;
 
 		size_t contentLength;
-		Request(): contentLength(0) {};
-		Request(const Request& other);
-		Request& operator=(const Request& other);
-		~Request();
+		//Request(): contentLength(0) {};
+		//Request(const Request& other);
+		//Request& operator=(const Request& other);
+		//~Request();
 };
 
 void parseRequest(const std::string& raw, Request& request);

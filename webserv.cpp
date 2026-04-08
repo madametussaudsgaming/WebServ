@@ -6,13 +6,13 @@
 /*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/17 10:45:51 by alechin           #+#    #+#             */
-/*   Updated: 2026/03/31 21:29:24 by alechin          ###   ########.fr       */
+/*   Updated: 2026/04/08 16:15:39 by alechin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 #include "Utilitys.hpp"
-#include "RequestParser.hpp"
+#include "Request.hpp"
 
 int setNonBlocking(int fd) {
 	return fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -79,7 +79,7 @@ int	main(int argumentCounter, char **argumentVector) {
 					std::cout << "Client Disconnected\n";
 				} else {
 					std::cout << "Raw Request:\n" << buffer << std::endl;
-					RequestParser request;
+					Request request;
 					parseRequest(buffer, request);
 					
 					std::cout << "Parsed Method: " << request.method << std::endl;

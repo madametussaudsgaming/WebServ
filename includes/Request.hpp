@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
+/*   By: rpadasia <ryanpadasian@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/31 20:07:11 by alechin           #+#    #+#             */
-/*   Updated: 2026/04/08 16:19:11 by alechin          ###   ########.fr       */
+/*   Updated: 2026/04/14 16:11:06 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,17 +22,21 @@ class Request {
 		std::string method;
 		std::string path;
 		std::string version;
-		
+
 		std::map<std::string, std::string> headers;
 		std::string body;
 
 		size_t contentLength;
-		//Request(): contentLength(0) {};
+		Request(): contentLength(0) {};
+
 		//Request(const Request& other);
 		//Request& operator=(const Request& other);
 		//~Request();
 };
 
 void parseRequest(const std::string& raw, Request& request);
+std::string handlePOST(const Request &req, const LocationConfig *loc);
+std::string handleDELETE(const Request &req, const LocationConfig *loc);
+
 
 #endif

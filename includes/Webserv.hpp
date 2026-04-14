@@ -3,15 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
+/*   By: rpadasia <ryanpadasian@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/17 10:58:08 by alechin           #+#    #+#             */
-/*   Updated: 2026/04/01 12:38:47 by alechin          ###   ########.fr       */
+/*   Updated: 2026/04/14 17:05:05 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef WEBSERV_H
-#define WEBSERV_H
+#ifndef WEBSERV_HPP
+#define WEBSERV_HPP
 
 #define PORT 8080
 #define BUFFER_SIZE 4096
@@ -28,18 +28,27 @@
 #include <fcntl.h>
 #include <algorithm>
 
-class GET {
-	
-};
+#include <fstream>
+#include <sstream>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <ctime>
 
-class POST {
+#include "Config.hpp"
 
-};
+struct ServerConfig;
 
-class DELETE {
+int		Error2exit(std::string errorMessage, int status);
+void    runServer(std::vector<ServerConfig> &configs);
 
-};
+//TCP
+std::string errorResponse(int code, const std::string &msg);
+std::string buildResponse(int statusCode,
+                                 const std::string &statusText,
+                                 const std::string &contentType,
+                                 const std::string &body);
 
-int	Error2exit(std::string errorMessage, int status);
+
+
 
 #endif

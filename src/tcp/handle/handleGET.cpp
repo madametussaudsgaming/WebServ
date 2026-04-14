@@ -1,21 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ConfigParser.hpp                                   :+:      :+:    :+:   */
+/*   handleGET.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
+/*   By: rpadasia <ryanpadasian@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/03/23 12:33:44 by alechin           #+#    #+#             */
-/*   Updated: 2026/03/26 15:17:00 by alechin          ###   ########.fr       */
+/*   Created: 2026/04/11 22:41:21 by rpadasia          #+#    #+#             */
+/*   Updated: 2026/04/11 22:41:22 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Webserv.hpp"
-
-class ConfigParser {
-	public:
-		std::string method;
-		std::string path;
-		std::string version;
-		std::map<std::string, std::string> header;
-};

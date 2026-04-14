@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+         #
+#    By: rpadasia <ryanpadasian@gmail.com>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/03/17 13:12:01 by alechin           #+#    #+#              #
-#    Updated: 2026/04/08 16:18:37 by alechin          ###   ########.fr        #
+#    Updated: 2026/04/14 14:16:09 by rpadasia         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,10 +17,15 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g3 -Iincludes $(FSAN)
 RM = rm -rf
 
 SOURCE = \
-	src/Error.cpp		\
-	src/Utilitys.cpp 	\
-	src/Request.cpp		\
-	webserv.cpp			\
+	src/Error.cpp					\
+	src/Utilitys.cpp 				\
+	src/Request.cpp					\
+	src/Tcp.cpp						\
+	src/ConfigParser.cpp			\
+	src/tcp/handle/handlePOST.cpp	\
+	src/tcp/handle/handleDELETE.cpp	\
+	webserv.cpp						\
+
 
 HEADER = \
 	includes/Request.hpp		\

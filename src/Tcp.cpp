@@ -6,28 +6,27 @@
 /*   By: rpadasia <ryanpadasian@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/08 17:15:44 by rpadasia          #+#    #+#             */
-/*   Updated: 2026/04/08 18:33:25 by rpadasia         ###   ########.fr       */
+/*   Updated: 2026/04/14 17:04:06 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 #include "Request.hpp"
+#include "Config.hpp"
 
 /* ─────────────────────────────────────────────
    CONSTANTS
    ───────────────────────────────────────────── */
 
-static const std::string SERVER_ROOT   = "./frontend";   // folder that holds your website files
-static const std::string UPLOAD_DIR    = "./frontend/uploads"; // where uploaded files are saved
 static const int         MAX_CLIENTS   = 128;
-static const int         CLIENT_TIMEOUT_SEC = 30;    // disconnect idle clients after 30s
+static const int         CLIENT_TIMEOUT_SEC = 30;               // disconnect idle clients after 30s
 
 /* ─────────────────────────────────────────────
-   HELPER: MIME TYPES
+   HELPER: EXTENSION TYPES
    Returns the Content-Type string for a file extension.
    ───────────────────────────────────────────── */
 
-static std::string getMimeType(const std::string &path)
+static std::string getExtensionType(const std::string &path)
 {
     // Find the last '.' in the path to get the extension
     size_t dot = path.rfind('.');
@@ -35,7 +34,7 @@ static std::string getMimeType(const std::string &path)
         return "application/octet-stream";
 
     std::string ext = path.substr(dot);
-    // Convert extension to lowercase for consistent matching
+    // Convert from begining!
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
     if (ext == ".html" || ext == ".htm") return "text/html";
@@ -43,6 +42,7 @@ static std::string getMimeType(const std::string &path)
     if (ext == ".js")                    return "application/javascript";
     if (ext == ".json")                  return "application/json";
     if (ext == ".png")                   return "image/png";
+    if (ext == ".jfif")                  return "image/jfif";
     if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
     if (ext == ".gif")                   return "image/gif";
     if (ext == ".svg")                   return "image/svg+xml";
@@ -58,7 +58,7 @@ static std::string getMimeType(const std::string &path)
    one string ready to be sent over the socket.
    ───────────────────────────────────────────── */
 
-static std::string buildResponse(int statusCode,
+std::string buildResponse(int statusCode,
                                  const std::string &statusText,
                                  const std::string &contentType,
                                  const std::string &body)
@@ -78,13 +78,11 @@ static std::string buildResponse(int statusCode,
    HELPER: SIMPLE ERROR RESPONSES
    ───────────────────────────────────────────── */
 
-static std::string errorResponse(int code, const std::string &msg)
+std::string errorResponse(int code, const std::string &msg)
 {
     std::ostringstream oss;
-    oss << code;
-    std::string body = "<html><body><h1>" + oss.str() +
-                       " " + msg + "</h1></body></html>";
-    return buildResponse(code, msg, "text/html", body);
+    oss << "<html><body><h1>" << code << " " << msg << "</h1></body></html>";
+    return buildResponse(code, msg, "text/html", oss.str());
 }
 
 /* ─────────────────────────────────────────────
@@ -131,16 +129,18 @@ static std::string directoryListing(const std::string &uriPath,
          << "<body><h2>Index of " << uriPath << "</h2><hr><ul>";
 
     DIR *dir = opendir(dirPath.c_str());
+    //real ass class btw, literally designed for holding directories
     if (dir)
     {
         struct dirent *entry;
+        // below is to iterate through the directory, readdir reads next entry
         while ((entry = readdir(dir)) != NULL)
         {
             std::string name = entry->d_name;
             if (name == ".")
                 continue;
             html << "<li><a href=\"" << uriPath;
-            // Make sure there's exactly one slash between path and name
+            // make sure there's exactly one slash between path and name
             if (!uriPath.empty() && uriPath[uriPath.size() - 1] != '/')
                 html << "/";
             html << name << "\">" << name << "</a></li>";
@@ -157,7 +157,7 @@ static std::string directoryListing(const std::string &uriPath,
    then reads and returns the file.
    ───────────────────────────────────────────── */
 
-static std::string handleGET(const Request &req)
+static std::string handleGET(const Request &req, const LocationConfig *loc)
 {
     // Strip query string (everything after '?') — we don't handle it yet
     std::string uriPath = req.path;
@@ -165,20 +165,23 @@ static std::string handleGET(const Request &req)
     if (qmark != std::string::npos)
         uriPath = uriPath.substr(0, qmark);
 
-    // Build the filesystem path: SERVER_ROOT + URI
-    std::string filePath = SERVER_ROOT + uriPath;
+    // Build the filesystem pathh
+    std::string filePath = loc->root + uriPath;
+    if (req.path.find("..") != std::string::npos)
+        return errorResponse(403, "Forbidden");
 
     // If the path ends in '/' or is a directory, try to serve index.html
     if (isDirectory(filePath))
     {
-        // Make sure there's a trailing slash for the directory
+        // The trailing slash fix there because "./html" + "index.html" would give "./htmlindex.html" — BZZZT! wrong. We need "./html/" first.
         if (!filePath.empty() && filePath[filePath.size() - 1] != '/')
             filePath += "/";
-        std::string indexPath = filePath + "index.html";
+        std::string indexPath = filePath + loc->index;
         std::string content;
+        // Got index.html :>
         if (readFile(indexPath, content))
             return buildResponse(200, "OK", "text/html", content);
-        // No index.html — show directory listing instead
+        // No index.html — show directory listing instead -_-
         return buildResponse(200, "OK", "text/html",
                              directoryListing(uriPath, filePath));
     }
@@ -192,89 +195,43 @@ static std::string handleGET(const Request &req)
     }
 
     std::cout << "[GET] 200 OK: " << filePath << std::endl;
-    return buildResponse(200, "OK", getMimeType(filePath), content);
-}
-
-/* ─────────────────────────────────────────────
-   HANDLER: POST
-   Saves the request body as a file in UPLOAD_DIR.
-   A real server would parse multipart here.
-   ───────────────────────────────────────────── */
-
-static std::string handlePOST(const Request &req)
-{
-    // Generate a filename based on the current timestamp so uploads don't overwrite each other
-    std::time_t now = std::time(NULL);
-    std::ostringstream oss;
-    oss << now;
-    std::string filename = UPLOAD_DIR + "/upload_" + oss.str() + ".bin";
-
-    // Make sure the upload directory exists
-    mkdir(UPLOAD_DIR.c_str(), 0755);
-
-    std::ofstream outFile(filename.c_str(), std::ios::binary);
-    if (!outFile.is_open())
-    {
-        std::cerr << "[POST] Could not open file for writing: " << filename << std::endl;
-        return errorResponse(500, "Internal Server Error");
-    }
-
-    outFile.write(req.body.c_str(), req.body.size());
-    outFile.close();
-
-    std::cout << "[POST] Saved " << req.body.size()
-              << " bytes to " << filename << std::endl;
-
-    std::ostringstream bodyOss;
-    bodyOss << "<html><body>"
-            << "<h2>Upload received</h2>"
-            << "<p>Saved " << req.body.size()
-            << " bytes to <code>" << filename << "</code></p>"
-            << "</body></html>";
-    return buildResponse(200, "OK", "text/html", bodyOss.str());
-}
-
-/* ─────────────────────────────────────────────
-   HANDLER: DELETE
-   Deletes a file from SERVER_ROOT given a URI path.
-   ───────────────────────────────────────────── */
-
-static std::string handleDELETE(const Request &req)
-{
-    std::string filePath = SERVER_ROOT + req.path;
-
-    // Safety check: only allow deletion inside SERVER_ROOT
-    // (a minimal guard — a real server needs more robust path traversal checks)
-    if (req.path.find("..") != std::string::npos)
-        return errorResponse(403, "Forbidden");
-
-    if (std::remove(filePath.c_str()) != 0)
-    {
-        std::cerr << "[DELETE] Could not delete: " << filePath << std::endl;
-        return errorResponse(404, "Not Found");
-    }
-
-    std::cout << "[DELETE] Deleted: " << filePath << std::endl;
-    std::string body = "<html><body><p>Deleted: <code>" +
-                       filePath + "</code></p></body></html>";
-    return buildResponse(200, "OK", "text/html", body);
+    return buildResponse(200, "OK", getExtensionType(filePath), content);
 }
 
 /* ─────────────────────────────────────────────
    DISPATCH: ROUTE REQUEST TO THE RIGHT HANDLER
    ───────────────────────────────────────────── */
 
-static std::string handleRequest(const Request &req)
+static std::string handleRequest(const Request &req,
+                                  const LocationConfig *loc)
 {
+    if (!loc)
+        return errorResponse(404, "Not Found");
+
+    if (loc->redirect_code != -1)
+    {
+        std::string body = "<html><body>Redirecting...</body></html>";
+        std::ostringstream oss;
+        oss << "HTTP/1.1 " << loc->redirect_code << " Moved\r\n"
+            << "Location: " << loc->redirect_url << "\r\n"
+            << "Content-Length: " << body.size() << "\r\n"
+            << "Connection: close\r\n\r\n" << body;
+        return oss.str();
+    }
+    bool allowed = false;
+    for (size_t i = 0; i < loc->methods.size(); i++)
+        if (loc->methods[i] == req.method) { allowed = true; break; }
+    if (!allowed)
+        return errorResponse(405, "Method Not Allowed");
     std::cout << "[REQUEST] " << req.method << " " << req.path
               << " " << req.version << std::endl;
 
     if (req.method == "GET")
-        return handleGET(req);
+        return handleGET(req, loc);
     if (req.method == "POST")
-        return handlePOST(req);
+        return handlePOST(req, loc);
     if (req.method == "DELETE")
-        return handleDELETE(req);
+        return handleDELETE(req, loc);
 
     // Any other method (PUT, PATCH, etc.) — not implemented
     return errorResponse(405, "Method Not Allowed");
@@ -288,7 +245,7 @@ static std::string handleRequest(const Request &req)
    or -1 on failure.
    ───────────────────────────────────────────── */
 
-static int setupServerSocket()
+static int setupServerSocket(int port)
 {
     // AF_INET  = IPv4
     // SOCK_STREAM = TCP (reliable, ordered, connection-based)
@@ -319,12 +276,12 @@ static int setupServerSocket()
     std::memset(&addr, 0, sizeof(addr));
     addr.sin_family      = AF_INET;         // IPv4
     addr.sin_addr.s_addr = INADDR_ANY;      // accept connections on any network interface
-    addr.sin_port        = htons(PORT);     // htons converts port to network byte order
+    addr.sin_port        = htons(port);     // htons converts port to network byte order
 
     if (bind(serverFd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
         std::ostringstream portOss;
-        portOss << PORT;
+        portOss << port;
         Error2exit("bind() failed — is port " + portOss.str() + " already in use?", 1);
         close(serverFd);
         return -1;
@@ -338,7 +295,7 @@ static int setupServerSocket()
         return -1;
     }
 
-    std::cout << "Server running on port " << PORT << std::endl;
+    std::cout << "Server running on port " << port << std::endl;
     return serverFd;
 }
 
@@ -362,7 +319,8 @@ static void removeClient(struct pollfd *fds, int &nfds, int index)
    ───────────────────────────────────────────── */
 
 static void acceptClient(int serverFd, struct pollfd *fds, int &nfds,
-                         time_t *lastActivity)
+                         time_t *lastActivity, const std::map<int, const ServerConfig*> &serverFdToConfig,
+                         std::map<int, const ServerConfig*> &clientToConfig)
 {
     struct sockaddr_in clientAddr;
     socklen_t clientLen = sizeof(clientAddr);
@@ -396,6 +354,27 @@ static void acceptClient(int serverFd, struct pollfd *fds, int &nfds,
 
     std::cout << "[ACCEPT] New client connected (fd=" << clientFd
               << ", total=" << nfds - 1 << ")" << std::endl;
+    clientToConfig[clientFd] = serverFdToConfig.at(serverFd);
+}
+
+//lowkey dont know how this works hmmm
+static const LocationConfig* findLocation(const ServerConfig &cfg,
+                                           const std::string &uri)
+{
+    const LocationConfig *best    = NULL;
+    size_t                bestLen = 0;
+
+    for (size_t i = 0; i < cfg.locations.size(); i++)
+    {
+        const std::string &locPath = cfg.locations[i].path;
+        // Check if the URI starts with this location's path
+        if (uri.substr(0, locPath.size()) == locPath && locPath.size() > bestLen)
+        {
+            best    = &cfg.locations[i];
+            bestLen = locPath.size();
+        }
+    }
+    return best;  // NULL if no location matched
 }
 
 /* ─────────────────────────────────────────────
@@ -404,7 +383,7 @@ static void acceptClient(int serverFd, struct pollfd *fds, int &nfds,
    ───────────────────────────────────────────── */
 
 static void handleClient(struct pollfd *fds, int &nfds, int index,
-                          time_t *lastActivity)
+                          time_t *lastActivity, std::map<int, const ServerConfig*> &clientToConfig)
 {
     int clientFd = fds[index].fd;
     char buffer[BUFFER_SIZE];
@@ -429,6 +408,7 @@ static void handleClient(struct pollfd *fds, int &nfds, int index,
         if (bytesRead == 0)
         {
             // Client closed the connection
+            clientToConfig.erase(clientFd);
             std::cout << "[RECV] Client disconnected (fd=" << clientFd << ")" << std::endl;
             removeClient(fds, nfds, index);
             return;
@@ -462,6 +442,7 @@ static void handleClient(struct pollfd *fds, int &nfds, int index,
 
     if (rawRequest.empty())
     {
+        clientToConfig.erase(clientFd);
         removeClient(fds, nfds, index);
         return;
     }
@@ -470,8 +451,15 @@ static void handleClient(struct pollfd *fds, int &nfds, int index,
     Request req;
     parseRequest(rawRequest, req);
 
+    const ServerConfig *cfg = clientToConfig[clientFd];
+
+    // Find which location matches the request URI
+    const LocationConfig *loc = findLocation(*cfg, req.path);
+
+    std::string response = handleRequest(req, loc);
+
+
     // Build and send the response
-    std::string response = handleRequest(req);
     ssize_t total = (ssize_t)response.size();
     ssize_t sent  = 0;
     while (sent < total)
@@ -491,7 +479,9 @@ static void handleClient(struct pollfd *fds, int &nfds, int index,
     lastActivity[index] = std::time(NULL);
 
     // We set Connection: close so disconnect after the response
+    clientToConfig.erase(clientFd);  // clean up when done
     removeClient(fds, nfds, index);
+    return ;
 }
 
 /* ─────────────────────────────────────────────
@@ -501,16 +491,21 @@ static void handleClient(struct pollfd *fds, int &nfds, int index,
    ───────────────────────────────────────────── */
 
 static void checkTimeouts(struct pollfd *fds, int &nfds,
-                           time_t *lastActivity, int serverFd)
+                           time_t *lastActivity,
+                           const std::map<int, const ServerConfig*> &serverFdToConfig,
+                           std::map<int, const ServerConfig*> &clientToConfig)
 {
     time_t now = std::time(NULL);
-    for (int i = nfds - 1; i >= 1; i--) // skip index 0 (server socket)
+    for (int i = nfds - 1; i >= 0; i--)
     {
-        if (fds[i].fd == serverFd)
+        // Skip server sockets — only timeout client sockets
+        if (serverFdToConfig.count(fds[i].fd))
             continue;
+
         if (now - lastActivity[i] > CLIENT_TIMEOUT_SEC)
         {
             std::cout << "[TIMEOUT] Closing idle client fd=" << fds[i].fd << std::endl;
+            clientToConfig.erase(fds[i].fd);
             removeClient(fds, nfds, i);
         }
     }
@@ -521,24 +516,43 @@ static void checkTimeouts(struct pollfd *fds, int &nfds,
    Call runServer() from main() to start everything.
    ───────────────────────────────────────────── */
 
-void runServer()
+void runServer(std::vector<ServerConfig> &configs)
 {
-    int serverFd = setupServerSocket();
-    if (serverFd < 0)
-        return;
-
     // poll() needs an array of pollfd structs — one per fd we're watching
     struct pollfd fds[MAX_CLIENTS];
     time_t        lastActivity[MAX_CLIENTS]; // parallel array tracking last recv time
     int           nfds = 0;
 
-    // Register the server socket as the first entry (index 0)
-    fds[0].fd      = serverFd;
-    fds[0].events  = POLLIN; // notify us when a new connection arrives
-    fds[0].revents = 0;
-    lastActivity[0] = std::time(NULL);
-    nfds = 1;
+    std::map<int, const ServerConfig*> serverFdToConfig;
+    //tracking
+    std::map<int, const ServerConfig*> clientToConfig;
 
+
+    for (size_t i = 0; i < configs.size(); i++)
+    {
+        for (size_t j = 0; j < configs[i].ports.size(); j++)
+        {
+            int port = configs[i].ports[j];
+            int fd = setupServerSocket(port);
+            if (fd < 0)
+            {
+                std::cerr << "[INIT] Failed to bind port " << port << std::endl;
+                continue;
+            }
+            fds[nfds].fd = fd;
+            fds[nfds].events = POLLIN;
+            fds[nfds].revents = 0;
+            lastActivity[nfds] = std::time(NULL);
+            nfds++;
+            serverFdToConfig[fd] = &configs[i];
+            std::cout << "[INIT] Listening on port " << port << std::endl;
+        }
+    }
+    if (nfds == 0)
+    {
+        std::cerr << "[INIT] No ports bound, exiting." << std::endl;
+        return;
+    }
     while (true)
     {
         // poll() blocks until at least one fd is ready, or timeout (1000ms here
@@ -552,32 +566,30 @@ void runServer()
         }
 
         // Check for idle clients even when poll() times out (ready == 0)
-        checkTimeouts(fds, nfds, lastActivity, serverFd);
+        checkTimeouts(fds, nfds, lastActivity, serverFdToConfig, clientToConfig);
 
         if (ready == 0)
             continue; // timeout — nothing to do this iteration
 
-        // Walk every fd to see which ones are ready
-        // We iterate backwards so that removeClient() (which swaps with last element)
-        // doesn't cause us to skip or double-process an fd
         for (int i = nfds - 1; i >= 0; i--)
         {
-            if (fds[i].revents == 0)
-                continue; // nothing happened on this fd
+            if (fds[i].revents == 0) continue;
 
-            if (fds[i].fd == serverFd)
+            if (serverFdToConfig.count(fds[i].fd))
             {
-                // Server socket readable = new client wants to connect
-                if (fds[i].revents & POLLIN)
-                    acceptClient(serverFd, fds, nfds, lastActivity);
+        // It's a server socket — accept a new client
+            if (fds[i].revents & POLLIN)
+                acceptClient(fds[i].fd, fds, nfds, lastActivity,
+                            serverFdToConfig, clientToConfig);
             }
             else
             {
                 // Client socket: either data arrived or an error occurred
                 if (fds[i].revents & (POLLIN | POLLERR | POLLHUP))
-                    handleClient(fds, nfds, i, lastActivity);
+                    handleClient(fds, nfds, i, lastActivity, clientToConfig);
             }
         }
     }
-    close(serverFd);
+    for (std::map<int, const ServerConfig*>::iterator it = serverFdToConfig.begin(); it != serverFdToConfig.end(); ++it)
+        close(it->first);
 }

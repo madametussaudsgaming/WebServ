@@ -6,17 +6,25 @@
 /*   By: rpadasia <ryanpadasian@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/17 10:45:51 by alechin           #+#    #+#             */
-/*   Updated: 2026/04/08 17:17:51 by rpadasia         ###   ########.fr       */
+/*   Updated: 2026/04/14 16:16:29 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 #include "Utilitys.hpp"
 #include "Request.hpp"
+#include "Config.hpp"
 
-int main()
+int main(int argc, char **argv)
 {
-	runServer();
+	if (argc != 2)  // program name + config file = 2
+	{
+    	std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+    	return (1);
+	}
+	std::vector<ServerConfig> configs = parseConfigFile(argv[1]);
+
+	runServer(configs);
 	return (0);
 }
 

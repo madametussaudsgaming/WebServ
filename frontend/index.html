@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Test Page</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: monospace;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      padding: 40px 24px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 { color: #7cfc7c; font-size: 1.4rem; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 32px; }
+    h2 { color: #7cb8ff; font-size: 1rem; margin-bottom: 12px; border-bottom: 1px solid #222; padding-bottom: 6px; }
+    section { margin-bottom: 36px; }
+    label { display: block; color: #aaa; font-size: 0.8rem; margin-bottom: 4px; }
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-family: monospace;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    input[type="file"] {
+      color: #aaa;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .btn-get    { background: #2a4a2a; color: #7cfc7c; border: 1px solid #3a6a3a; }
+    .btn-post   { background: #2a3a5a; color: #7cb8ff; border: 1px solid #3a5a8a; }
+    .btn-delete { background: #4a2a2a; color: #ff7c7c; border: 1px solid #6a3a3a; }
+    button:hover { opacity: 0.8; }
+    #response-box {
+      margin-top: 20px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 14px;
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      min-height: 60px;
+      color: #ccc;
+      display: none;
+    }
+    #response-box.visible { display: block; }
+    .status-ok  { color: #7cfc7c; }
+    .status-err { color: #ff7c7c; }
+    .row { display: flex; gap: 10px; }
+    .row input { flex: 1; }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .tag-get    { background: #2a4a2a; color: #7cfc7c; }
+    .tag-post   { background: #2a3a5a; color: #7cb8ff; }
+    .tag-delete { background: #4a2a2a; color: #ff7c7c; }
+  </style>
+</head>
+<body>
+
+  <h1>&#9654; HTTP Server Test Page</h1>
+  <p class="subtitle">Use these forms to test your server's request handling. Responses appear below each action.</p>
+
+  <!-- GET -->
+  <section>
+    <h2>GET request <span class="tag tag-get">GET</span></h2>
+    <label>Path to fetch (e.g. /index.html or /about.html)</label>
+    <input type="text" id="get-path" value="/index.html">
+    <button class="btn-get" onclick="doGet()">Send GET</button>
+  </section>
+
+  <!-- POST plain text -->
+  <section>
+    <h2>POST plain text <span class="tag tag-post">POST</span></h2>
+    <label>Path</label>
+    <input type="text" id="post-path" value="/echo">
+    <label>Body</label>
+    <textarea id="post-body">Hello from POST!</textarea>
+    <button class="btn-post" onclick="doPost()">Send POST</button>
+  </section>
+
+  <!-- POST multipart file upload -->
+  <section>
+    <h2>POST file upload <span class="tag tag-post">POST multipart</span></h2>
+    <label>Upload path</label>
+    <input type="text" id="upload-path" value="/upload">
+    <label>Choose file</label>
+    <input type="file" id="upload-file">
+    <button class="btn-post" onclick="doUpload()">Upload File</button>
+  </section>
+
+  <!-- DELETE -->
+  <section>
+    <h2>DELETE request <span class="tag tag-delete">DELETE</span></h2>
+    <label>Path of file to delete (e.g. /uploads/test.txt)</label>
+    <input type="text" id="delete-path" value="/uploads/test.txt">
+    <button class="btn-delete" onclick="doDelete()">Send DELETE</button>
+  </section>
+
+  <!-- Large body test -->
+  <section>
+    <h2>Large body test <span class="tag tag-post">POST</span></h2>
+    <label>Approximate body size (KB)</label>
+    <input type="number" id="body-size" value="10" min="1" max="10000">
+    <button class="btn-post" onclick="doLargePost()">Send large POST</button>
+  </section>
+
+  <!-- Response display -->
+  <div id="response-box"></div>
+
+<script>
+  const box = document.getElementById('response-box');
+
+  function showResponse(label, status, headers, body) {
+    const statusClass = (status >= 200 && status < 300) ? 'status-ok' : 'status-err';
+    box.className = 'visible';
+    box.innerHTML =
+      '<span style="color:#666">&#8212;&#8212; ' + label + ' &#8212;&#8212;</span>\n' +
+      '<span class="' + statusClass + '">HTTP ' + status + '</span>\n\n' +
+      '<span style="color:#888">Headers:</span>\n' + escHtml(headers) + '\n\n' +
+      '<span style="color:#888">Body:</span>\n' + escHtml(body.slice(0, 2000)) +
+      (body.length > 2000 ? '\n<span style="color:#666">... (' + body.length + ' bytes total)</span>' : '');
+  }
+
+  function showError(label, err) {
+    box.className = 'visible';
+    box.innerHTML = '<span style="color:#666">&#8212;&#8212; ' + label + ' &#8212;&#8212;</span>\n<span class="status-err">Error: ' + escHtml(String(err)) + '</span>';
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function fetchAndShow(label, url, options) {
+    try {
+      const res = await fetch(url, options);
+      const headerLines = [...res.headers.entries()].map(([k,v]) => k + ': ' + v).join('\n');
+      const body = await res.text();
+      showResponse(label, res.status, headerLines, body);
+    } catch(e) {
+      showError(label, e);
+    }
+  }
+
+  function doGet() {
+    const path = document.getElementById('get-path').value || '/';
+    fetchAndShow('GET ' + path, path, { method: 'GET' });
+  }
+
+  function doPost() {
+    const path = document.getElementById('post-path').value || '/echo';
+    const body = document.getElementById('post-body').value;
+    fetchAndShow('POST ' + path, path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: body
+    });
+  }
+
+  function doUpload() {
+    const path = document.getElementById('upload-path').value || '/upload';
+    const file = document.getElementById('upload-file').files[0];
+    if (!file) { alert('Pick a file first.'); return; }
+    const fd = new FormData();
+    fd.append('file', file);
+    fetchAndShow('POST (multipart) ' + path, path, { method: 'POST', body: fd });
+  }
+
+  function doDelete() {
+    const path = document.getElementById('delete-path').value || '/uploads/test.txt';
+    fetchAndShow('DELETE ' + path, path, { method: 'DELETE' });
+  }
+
+  function doLargePost() {
+    const kb = parseInt(document.getElementById('body-size').value) || 10;
+    const body = 'A'.repeat(kb * 1024);
+    fetchAndShow('POST large (' + kb + 'KB)', '/echo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: body
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -6,7 +6,7 @@
 #    By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/03/17 13:12:01 by alechin           #+#    #+#              #
-#    Updated: 2026/05/11 13:51:32 by alechin          ###   ########.fr        #
+#    Updated: 2026/05/14 13:52:12 by alechin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,7 +27,6 @@ SOURCE = \
 	src/ConfigParser.cpp			\
 	src/handlePOST.cpp				\
 	src/handleDELETE.cpp			\
-	src/handleGET.cpp				\
 	webserv.cpp						\
 
 HEADER = \

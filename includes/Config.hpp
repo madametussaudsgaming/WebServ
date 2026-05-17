@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpadasia <ryanpadasian@gmail.com>          +#+  +:+       +#+        */
+/*   By: rpadasia <rpadasia@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/13 09:30:46 by rpadasia          #+#    #+#             */
-/*   Updated: 2026/04/14 16:50:34 by rpadasia         ###   ########.fr       */
+/*   Updated: 2026/05/17 18:08:54 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ struct LocationConfig {
 struct ServerConfig {
     std::vector<int>			ports;          // ports to listen on
     std::string					host;           // "0.0.0.0" default
+	std::vector<std::string>	server_names;
     std::map<int, std::string>	error_pages;    // {404 -> "/errors/404.html"}
     size_t						max_body_size;  // bytes
     std::vector<LocationConfig>	locations;

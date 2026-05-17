@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
+/*   By: rpadasia <rpadasia@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/19 15:41:25 by alechin           #+#    #+#             */
-/*   Updated: 2026/05/07 14:54:15 by alechin          ###   ########.fr       */
+/*   Updated: 2026/05/17 18:24:26 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,23 @@
 // Split into server { ... } blocks
 // Inside each server block, split into location /path { ... } blocks
 // Parse each directive line (key value;) into the appropriate struct field
+
+static std::string stripComments(const std::string& text) {
+	std::string out;
+	out.reserve(text.size()); //new thuingy! it reserves memory in case we se it later!
+	bool inComment = false;
+	for (size_t i = 0; i < text.size(); i++) {
+		if (!inComment  && text[i] == '#')
+			inComment = true;
+		else if (inComment && text[i] == '\n') {
+			inComment = false;
+			out += '\n';
+		}
+		else if (!inComment)
+			out += text[i]
+	}
+	return (out);
+}
 
 static std::vector<std::string> extractServerBlocks(const std::string &text)
 {
@@ -89,9 +106,9 @@ static LocationConfig parseLocationBlock(std::istringstream& stream)
             line.erase(line.size() - 1);
 
         // Strip comments
-        size_t commentPos = line.find('#');
-        if (commentPos != std::string::npos)
-            line = line.substr(0, commentPos);
+        // size_t commentPos = line.find('#');
+        // if (commentPos != std::string::npos)
+        //     line = line.substr(0, commentPos);
 
         std::istringstream lineStream(line);
         std::vector<std::string> words;
@@ -122,7 +139,9 @@ std::vector<ServerConfig> parseConfigFile(const std::string &filename)
 		throw std::runtime_error("Cannot open config file: " + filename);
 	std::ostringstream ss;
 	ss << file.rdbuf();
-	std::string rawText = ss.str();
+	
+	std::string rawText = stripComments(ss.str());
+	
 	std::vector<std::string> servers = extractServerBlocks(rawText);
 
 	for (size_t i = 0; i < servers.size(); i++)
@@ -164,7 +183,10 @@ std::vector<ServerConfig> parseConfigFile(const std::string &filename)
 					cfg.ports.push_back(std::atoi(words[1].c_str()));
 			}
 			else if (words[0] == "server_name" && words.size() >= 2)
-				cfg.host = words[1];
+			{
+				for (size_t i = 1; i < words.size(); i++)
+					cfg.server_names.push_back(words[i]);
+			}
 			else if (words[0] == "client_max_body_size" && words.size() >= 2)
 				cfg.max_body_size = (size_t)std::atoi(words[1].c_str());
 			else if (words[0] == "error_page" && words.size() >= 3)

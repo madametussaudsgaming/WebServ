@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
+/*   By: rpadasia <rpadasia@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/16 13:01:11 by alechin           #+#    #+#             */
-/*   Updated: 2026/05/07 15:37:43 by alechin          ###   ########.fr       */
+/*   Updated: 2026/05/17 18:06:47 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ static char** buildEnv(const Request& request, const std::string& scriptPath) {
 	env.push_back("QUERY_STRING=" + extractQuery(request.path));
 	env.push_back("CONTENT_LENGTH=" + intToStr(request.body.size()));
 
-	if (request.headers.count("Content-Type"))
+	if (request.headers.count("content-type"))
 		env.push_back("CONTENT_TYPE=" + request.headers.at("Content-Type"));
 	
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");

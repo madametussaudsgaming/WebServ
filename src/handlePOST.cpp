@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   handlePOST.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alechin <alechin@student.42kl.edu.my>      +#+  +:+       +#+        */
+/*   By: rpadasia <rpadasia@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/11 22:41:23 by rpadasia          #+#    #+#             */
-/*   Updated: 2026/05/07 15:34:55 by alechin          ###   ########.fr       */
+/*   Updated: 2026/05/17 18:06:33 by rpadasia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ std::string handlePOST(const Request &req, const LocationConfig *loc)
     mkdir(loc->upload_store.c_str(), 0755);
 
     // Check if this is a multipart upload by looking at Content-Type header
-    std::map<std::string, std::string>::const_iterator ctIt = req.headers.find("Content-Type");
+    std::map<std::string, std::string>::const_iterator ctIt = req.headers.find("content-type");
     if (ctIt == req.headers.end())
         return errorResponse(400, "Bad Request", NULL);
 
